@@ -354,7 +354,7 @@
 
       // ===== Admin lock helpers =====
       function getAdminPass(){
-        return (state?.settings?.adminPassword || "1234").toString();
+        return (state?.settings?.adminPassword || "123123123spc").toString();
       }
       function isAdminUnlocked(){
         return localStorage.getItem(STORAGE_KEY + "_admin_unlocked") === "1";
@@ -1188,3 +1188,4 @@
   </script>
 </body>
 </html>
+
