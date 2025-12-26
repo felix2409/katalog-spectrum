@@ -159,7 +159,7 @@
     .itemList{display:flex; flex-direction:column; gap:10px;}
     .itemCard{
       display:grid;
-      grid-template-columns: 70px 1fr auto;
+      grid-template-columns: 1fr auto;
       gap:10px;
       align-items:center;
       padding:10px;
@@ -167,7 +167,6 @@
       border:1px solid rgba(255,255,255,.10);
       background: rgba(11,15,23,.32);
     }
-    .itemCard.noThumb{grid-template-columns: 1fr auto;}
 
     .thumb{
       width:64px; height:64px;
@@ -176,6 +175,7 @@
       background: rgba(255,255,255,.05);
       overflow:hidden;
       display:flex; align-items:center; justify-content:center;
+      flex:0 0 auto;
     }
     .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
     .thumb .ph{
@@ -215,7 +215,7 @@
     .acc.collapsed .accArrow{transform: rotate(-90deg);}
 
     .adminBar{
-      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+      display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; justify-content:space-between;
       margin: 12px 0 0 0; padding:10px 12px;
       border:1px solid rgba(255,255,255,.10);
       border-radius: 16px;
@@ -233,6 +233,16 @@
       font-size:13px;
     }
     .editNum{font-family:var(--mono);}
+    .checkRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .chk{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.12);
+      font-size:12px; color:var(--text);
+      user-select:none;
+    }
+    .chk input{transform:scale(1.1)}
 
     @media (max-width: 980px){
       header{flex-direction:column; align-items:stretch}
@@ -240,22 +250,8 @@
       .logoImg{width:min(340px, 100%)}
     }
     @media (max-width: 720px){
-      .itemCard{
-        grid-template-columns: 64px 1fr;
-        grid-template-areas:
-          "thumb main"
-          "thumb price";
-        align-items:start;
-      }
-      .itemCard.noThumb{
-        grid-template-columns: 1fr;
-        grid-template-areas:
-          "main"
-          "price";
-      }
-      .itemCard .thumb{grid-area: thumb;}
-      .itemCard .itemMain{grid-area: main;}
-      .itemCard .itemPrice{grid-area: price; text-align:left; margin-top:6px;}
+      .itemPrice{text-align:left; margin-top:6px;}
+      .itemCard{grid-template-columns:1fr;}
     }
 
     @media print{
@@ -265,7 +261,7 @@
       .card{break-inside:avoid; box-shadow:none; border:1px solid #ddd}
       .card::before{display:none}
       .wrap{max-width:none}
-      .cardSub, .tiny{color:#444 !important}
+      .tiny{color:#444 !important}
       .badge{border-color:#bbb !important; color:#000 !important; background:#f5f5f5 !important}
       .logoImg{box-shadow:none !important; border-color:#ddd !important}
       .itemCard{border-color:#ddd !important; background:#fff !important}
@@ -323,7 +319,7 @@
 
   <script>
     (function(){
-      const STORAGE_KEY = "spectrum_catalog_tabs_compact_v9"; // versi baru
+      const STORAGE_KEY = "spectrum_catalog_tabs_compact_v10";
       const deepClone = (x)=>JSON.parse(JSON.stringify(x));
 
       const nf = new Intl.NumberFormat("id-ID");
@@ -356,13 +352,6 @@
         return `<div class="thumb"><div class="ph">${escapeHtml(title || "IMG")}</div></div>`;
       }
 
-      function rowThumbHtml(row){
-        if(row?.img){
-          return `<div class="thumb"><img src="${escapeHtml(row.img)}" alt=""></div>`;
-        }
-        return `<div class="thumb"><div class="ph">${escapeHtml(initialsFromLabel(row?.label))}</div></div>`;
-      }
-
       function badgeHtml(b){
         const cls = b?.style ? `badge ${b.style}` : "badge";
         return `<span class="${cls}">${escapeHtml(b?.text||"")}</span>`;
@@ -370,24 +359,6 @@
 
       function accKey(sectionKey, groupTitle){ return `${sectionKey}::${groupTitle}`; }
       function isMobile(){ return window.matchMedia && window.matchMedia("(max-width: 720px)").matches; }
-
-      // Thumb policy
-      // none: tidak ada thumb item
-      // row: thumb per item
-      // groupOnly: thumb hanya header group
-      const THUMB_POLICY = {
-        fotocopy: "none",
-        hitamputih: "none",
-        kartunama: "none",
-        brosur_1sisi: "none",
-        brosur_2sisi: "none",
-        laminasi_a3: "none",   // ✅ thumbnail di judul saja
-        laminating: "none",    // ✅ thumbnail di judul saja
-        jilid: "row",
-        warna: "row",          // HVS & ArtPaper override rowThumb=false
-        cutting: "groupOnly"
-      };
-      function policyForSectionKey(key){ return THUMB_POLICY[key] || "row"; }
 
       const DESC = {
         HVS: "Kertas HVS (uncoated) matte/halus. Cocok dokumen & materi belajar. Warna natural (tidak se-glossy art paper).",
@@ -421,7 +392,8 @@
         settings: { mode: "customer" },
         ui: { activeTab: "fotocopy", accOpen: {} },
         sections: [
-          { key:"fotocopy", title:"Fotocopy", badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"rows",
+          { key:"fotocopy", title:"Fotocopy", headerThumb:true, thumbTitle:"Fotocopy", thumbImg:"",
+            badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"rows",
             rows:[
               {label:"A4 70 gram", price:300, unit:"sisi", desc:"Fotocopy standar untuk dokumen A4."},
               {label:"F4 70 gram", price:300, unit:"sisi", desc:"Fotocopy standar untuk ukuran F4/Folio."},
@@ -429,7 +401,8 @@
             ]
           },
 
-          { key:"hitamputih", title:"Hitam Putih", badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"rows",
+          { key:"hitamputih", title:"Hitam Putih", headerThumb:true, thumbTitle:"BW", thumbImg:"",
+            badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"rows",
             rows:[
               {label:"A4 70 gram", price:500, unit:"sisi", desc:"Hemat untuk dokumen teks."},
               {label:"A4 80 gram", price:550, unit:"sisi", desc:"Lebih tebal & rapi."},
@@ -441,7 +414,8 @@
             ]
           },
 
-          { key:"warna", title:"Warna", badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"groupedRows",
+          { key:"warna", title:"Warna", headerThumb:true, thumbTitle:"Warna", thumbImg:"",
+            badge:{text:"Per sisi", style:"accent"}, sub:"Laser", type:"groupedRows",
             groups: [
               { title:"HVS", headerThumb:true, rowThumb:false, thumbTitle:"HVS", thumbImg:"", rows:[
                 {label:"HVS A3 70 gram", price:2700, unit:"sisi", desc: DESC.HVS_A3_ONLY + DESC.HVS },
@@ -459,31 +433,32 @@
                 {label:"AP400 gram", price:7500, unit:"sisi", desc: DESC.AP + " " + DESC.AP400},
               ]},
 
-              { title:"Kertas Tekstur", headerThumb:false, rowThumb:true, thumbTitle:"Tekstur", thumbImg:"", rows:[
+              { title:"Kertas Tekstur", headerThumb:true, rowThumb:false, thumbTitle:"Tekstur", thumbImg:"", rows:[
                 {label:"Jasmine 220 gram", price:4300, unit:"sisi", desc: DESC.JASMINE},
                 {label:"Copenhagen 220 gram", price:4300, unit:"sisi", desc: DESC.COPEN},
                 {label:"Blushwhite 270 gram", price:4300, unit:"sisi", desc: DESC.BLUSH},
               ]},
 
-              { title:"Stiker", headerThumb:false, rowThumb:true, thumbTitle:"Stiker", thumbImg:"", rows:[
+              { title:"Stiker", headerThumb:true, rowThumb:false, thumbTitle:"Stiker", thumbImg:"", rows:[
                 {label:"Bontak (Tidak Anti Air)", price:4000, unit:"sisi", desc: DESC.BONTak},
                 {label:"Vinyl Putih (Tahan Air)", price:8000, unit:"sisi", desc: DESC.VINYL_WHITE},
                 {label:"Vinyl Transparan (Tahan Air)", price:8000, unit:"sisi", desc: DESC.VINYL_CLEAR},
                 {label:"Vinyl Metalik (Silver/Gold)", price:12000, unit:"sisi", desc: DESC.VINYL_METAL},
               ]},
 
-              { title:"ID Card PVC", headerThumb:false, rowThumb:true, thumbTitle:"PVC", thumbImg:"", rows:[
+              { title:"ID Card PVC", headerThumb:true, rowThumb:false, thumbTitle:"PVC", thumbImg:"", rows:[
                 {label:"ID Card PVC (Paket 2 pcs)", price:20000, unit:"paket", desc: DESC.PVC + " (Hitungan per 2 pcs)."},
                 {label:"ID Card PVC (Paket 5 pcs)", price:37500, unit:"paket", desc: DESC.PVC + " (Hitungan per 5 pcs)."},
               ]},
 
-              { title:"Lainnya", headerThumb:false, rowThumb:true, thumbTitle:"Lainnya", thumbImg:"", rows:[
+              { title:"Lainnya", headerThumb:true, rowThumb:false, thumbTitle:"Lainnya", thumbImg:"", rows:[
                 {label:"Glory A4", price:6000, unit:"sisi", desc: DESC.GLORY},
               ]},
             ]
           },
 
-          { key:"kartunama", title:"Kartu Nama (1 box=100pcs • 9×5,5 cm)", badge:{text:"Per box", style:"blue"}, sub:"Laser", type:"rows2price",
+          { key:"kartunama", title:"Kartu Nama (1 box=100pcs • 9×5,5 cm)", headerThumb:true, thumbTitle:"Kartu Nama", thumbImg:"",
+            badge:{text:"Per box", style:"blue"}, sub:"Laser", type:"rows2price",
             rows:[
               {label:"AP 260", p1:22000, p2:44000, desc:"Art Paper 260g, tebal untuk kartu."},
               {label:"AP 310", p1:27000, p2:54000, desc:"Art Paper 310g, lebih kaku/premium."},
@@ -498,7 +473,8 @@
             ]
           },
 
-          { key:"brosur_1sisi", title:"Paket Brosur 1 Rim (1 sisi)", badge:{text:"Per rim", style:"ok"}, sub:"Laser", type:"rows",
+          { key:"brosur_1sisi", title:"Paket Brosur 1 Rim (1 sisi)", headerThumb:true, thumbTitle:"Brosur 1s", thumbImg:"",
+            badge:{text:"Per rim", style:"ok"}, sub:"Laser", type:"rows",
             rows:[
               {label:"A6 • Artpaper 120", price:150000, unit:"rim", desc:"Brosur A6 ekonomis."},
               {label:"A6 • Artpaper 150", price:165000, unit:"rim", desc:"A6 lebih tebal."},
@@ -512,7 +488,8 @@
             ]
           },
 
-          { key:"brosur_2sisi", title:"Paket Brosur 1 Rim (2 sisi)", badge:{text:"Per rim", style:"ok"}, sub:"Laser", type:"rows",
+          { key:"brosur_2sisi", title:"Paket Brosur 1 Rim (2 sisi)", headerThumb:true, thumbTitle:"Brosur 2s", thumbImg:"",
+            badge:{text:"Per rim", style:"ok"}, sub:"Laser", type:"rows",
             rows:[
               {label:"A6 • Artpaper 120", price:265000, unit:"rim", desc:"A6 bolak-balik."},
               {label:"A6 • Artpaper 150", price:280000, unit:"rim", desc:"A6 lebih tebal."},
@@ -526,15 +503,14 @@
             ]
           },
 
-          // ✅ Thumbnail di judul saja (bukan per produk)
           { key:"laminasi_a3", title:"Laminasi", headerThumb:true, thumbTitle:"Laminasi", thumbImg:"",
             badge:{text:"Add-on", style:"blue"}, sub:"Per sisi • Laser", type:"rows",
             rows:[
-              {label:"Laminasi A3 (Glossy/Doff)", price:4000, unit:"sisi", desc:"Hanya untuk Art Paper ± AP210 ke atas & bahan stiker. Glossy mengkilap, doff matte/elegan."}
+              {label:"Laminasi A3 (Glossy/Doff)", price:4000, unit:"sisi",
+               desc:"Hanya untuk Art Paper ± AP210 ke atas & bahan stiker. Glossy mengkilap, doff matte/elegan."}
             ]
           },
 
-          // ✅ Laminating (baru) — thumbnail di judul saja
           { key:"laminating", title:"Laminating", headerThumb:true, thumbTitle:"Laminating", thumbImg:"",
             badge:{text:"Add-on", style:"blue"}, sub:"Laser", type:"rows",
             rows:[
@@ -543,7 +519,8 @@
             ]
           },
 
-          { key:"cutting", title:"Jasa Cutting (per lembar A3)", badge:{text:"Add-on", style:"blue"}, sub:"Maks 3 desain/gambar per lembar", type:"groupedRows",
+          { key:"cutting", title:"Jasa Cutting (per lembar A3)", headerThumb:true, thumbTitle:"Cutting", thumbImg:"",
+            badge:{text:"Add-on", style:"blue"}, sub:"Maks 3 desain/gambar per lembar", type:"groupedRows",
             groups:[
               { title:"Kiss Cut (setengah putus)", headerThumb:true, rowThumb:false, thumbTitle:"Kiss Cut", thumbImg:"", rows:[
                 {label:"S • 1 – 45 pcs", price:4500, unit:"lembar", desc:"Kiss cut: potong stiker saja, backing tetap utuh."},
@@ -564,14 +541,15 @@
             ]
           },
 
-          { key:"jilid", title:"Macam-macam Jilid", badge:{text:"Info", style:"blue"}, sub:"Harga menyesuaikan ketebalan/jumlah halaman", type:"textRows",
+          { key:"jilid", title:"Macam-macam Jilid", headerThumb:true, thumbTitle:"Jilid", thumbImg:"",
+            badge:{text:"Info", style:"blue"}, sub:"Harga menyesuaikan ketebalan/jumlah halaman", type:"textRows",
             rows:[
-              {label:"Spiral", text:"Rp 6.000 – 28.000", img:"", desc:"Cocok untuk notes/buku kerja (bisa dibuka 360°)."},
-              {label:"Lakban", text:"Rp 4.000 – 15.000", img:"", desc:"Jilid cepat & rapi, kuat sesuai tebal, dengan menggunakan lakban hitam."},
-              {label:"Mika", text:"Rp 1.000 / lembar", img:"", desc:"Cover mika transparan (depan/back)."},
-              {label:"Bufalo", text:"Rp 1.000 / lembar", img:"", desc:"Cover mika doff/tekstur lebih kokoh."},
-              {label:"Softcover", text:"Rp 20.500 – 50.000", img:"", desc:"Cover fleksibel seperti buku, harga sesuai tebal."},
-              {label:"Hardcover", text:"Rp 35.000", img:"", desc:"Cover keras premium."},
+              {label:"Spiral", text:"Rp 6.000 – 28.000", desc:"Cocok untuk notes/buku kerja (bisa dibuka 360°)."},
+              {label:"Lakban", text:"Rp 4.000 – 15.000", desc:"Jilid cepat & rapi, kuat sesuai tebal."},
+              {label:"Mika", text:"Rp 1.000 / lembar", desc:"Cover transparan (depan/back)."},
+              {label:"Bufalo", text:"Rp 1.000 / lembar", desc:"Cover doff/tekstur lebih kokoh."},
+              {label:"Softcover", text:"Rp 20.500 – 50.000", desc:"Cover fleksibel seperti buku, harga sesuai tebal."},
+              {label:"Hardcover", text:"Rp 35.000", desc:"Cover keras premium."},
             ]
           },
         ]
@@ -669,6 +647,55 @@
         `;
       }
 
+      function adminSectionThumbEditor(section){
+        if(!isAdmin) return "";
+        return `
+          <div class="adminBar">
+            <div style="flex:1; min-width:260px;">
+              <div class="tiny"><b>Thumbnail Judul Tab</b> (opsional)</div>
+              <div class="checkRow" style="margin-top:8px;">
+                <label class="chk">
+                  <input type="checkbox" data-edit data-skey="${section.key}" data-type="sectionHeader" data-field="headerThumb"
+                         ${section.headerThumb ? "checked":""}>
+                  Tampilkan thumbnail judul
+                </label>
+              </div>
+              <div class="editGrid">
+                <input class="editText" data-edit data-skey="${section.key}" data-type="sectionHeader" data-field="thumbTitle"
+                  placeholder="Teks fallback (misal: HVS, AP, Laminasi)" value="${escapeHtml(section.thumbTitle||"")}">
+                <input class="editText" data-edit data-skey="${section.key}" data-type="sectionHeader" data-field="thumbImg"
+                  placeholder="URL gambar thumbnail judul (contoh: https://.../gambar.png)" value="${escapeHtml(section.thumbImg||"")}">
+              </div>
+              <div class="tiny" style="margin-top:6px;">Tip: kalau URL kosong, thumbnail akan pakai teks.</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function adminGroupThumbEditor(sectionKey, g, gidx){
+        if(!isAdmin) return "";
+        return `
+          <div class="adminBar" style="margin:0 0 10px 0;">
+            <div style="flex:1; min-width:260px;">
+              <div class="tiny"><b>Thumbnail Judul Sub-Kategori</b> (opsional)</div>
+              <div class="checkRow" style="margin-top:8px;">
+                <label class="chk">
+                  <input type="checkbox" data-edit data-skey="${sectionKey}" data-type="groupHeader" data-gidx="${gidx}" data-field="headerThumb"
+                         ${g.headerThumb ? "checked":""}>
+                  Tampilkan thumbnail di judul sub-kategori
+                </label>
+              </div>
+              <div class="editGrid">
+                <input class="editText" data-edit data-skey="${sectionKey}" data-type="groupHeader" data-gidx="${gidx}" data-field="thumbTitle"
+                  placeholder="Teks fallback (misal: HVS, Stiker, Kiss Cut)" value="${escapeHtml(g.thumbTitle||"")}">
+                <input class="editText" data-edit data-skey="${sectionKey}" data-type="groupHeader" data-gidx="${gidx}" data-field="thumbImg"
+                  placeholder="URL gambar thumbnail sub-kategori (https://...)" value="${escapeHtml(g.thumbImg||"")}">
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       function bindAdminEditors(){
         if(!isAdmin) return;
 
@@ -681,46 +708,55 @@
             const t = inp.dataset.type;
             const field = inp.dataset.field;
 
+            const value = (inp.type === "checkbox") ? inp.checked : inp.value;
+
+            if(t === "sectionHeader"){
+              section[field] = (inp.type === "checkbox") ? !!value : value;
+              saveState(); render(); return;
+            }
+
+            if(t === "groupHeader"){
+              const gidx = +inp.dataset.gidx;
+              const g = section.groups?.[gidx];
+              if(!g) return;
+              g[field] = (inp.type === "checkbox") ? !!value : value;
+              saveState(); render(); return;
+            }
+
             if(t === "rows"){
               const idx = +inp.dataset.idx;
-              if(field === "price") section.rows[idx][field] = Number(inp.value||0);
-              else section.rows[idx][field] = inp.value;
+              if(field === "price") section.rows[idx][field] = Number(value||0);
+              else section.rows[idx][field] = value;
+              saveState(); return;
             }
 
             if(t === "groupedRows"){
               const gidx = +inp.dataset.gidx;
               const ridx = +inp.dataset.ridx;
-              if(field === "price") section.groups[gidx].rows[ridx][field] = Number(inp.value||0);
-              else section.groups[gidx].rows[ridx][field] = inp.value;
-            }
-
-            if(t === "groupHeader"){
-              const gidx = +inp.dataset.gidx;
-              section.groups[gidx][field] = inp.value;
+              if(field === "price") section.groups[gidx].rows[ridx][field] = Number(value||0);
+              else section.groups[gidx].rows[ridx][field] = value;
+              saveState(); return;
             }
 
             if(t === "rows2price"){
               const idx = +inp.dataset.idx;
-              if(field === "p1" || field === "p2") section.rows[idx][field] = Number(inp.value||0);
-              else section.rows[idx][field] = inp.value;
+              if(field === "p1" || field === "p2") section.rows[idx][field] = Number(value||0);
+              else section.rows[idx][field] = value;
+              saveState(); return;
             }
 
             if(t === "extras"){
               const idx = +inp.dataset.idx;
-              if(field === "price") section.extras[idx][field] = Number(inp.value||0);
-              else section.extras[idx][field] = inp.value;
+              if(field === "price") section.extras[idx][field] = Number(value||0);
+              else section.extras[idx][field] = value;
+              saveState(); return;
             }
 
             if(t === "textRows"){
               const idx = +inp.dataset.idx;
-              section.rows[idx][field] = inp.value;
+              section.rows[idx][field] = value;
+              saveState(); return;
             }
-
-            if(t === "sectionHeader"){
-              section[field] = inp.value;
-            }
-
-            saveState();
           }, {passive:true});
         });
       }
@@ -732,21 +768,21 @@
 
         const match = (obj)=> !q || normalize(JSON.stringify(obj)).includes(q);
 
-        const renderRows = (section, rows, showThumbRows) => {
+        const renderRows = (section, rows) => {
           let html = `<div class="itemList">`;
           rows.forEach((r, idx)=>{
-            const noThumb = !showThumbRows;
             html += `
-              <div class="itemCard${noThumb ? " noThumb":""}">
-                ${showThumbRows ? rowThumbHtml(r) : ""}
+              <div class="itemCard">
                 <div class="itemMain">
                   <div class="itemName">${escapeHtml(r.label)}</div>
                   <div class="itemMeta">${escapeHtml(r.desc||"")}</div>
 
                   ${isAdmin ? `
                     <div class="editGrid">
-                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows" data-idx="${idx}" data-field="label" value="${escapeHtml(r.label)}">
-                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows" data-idx="${idx}" data-field="desc" placeholder="Deskripsi (opsional)" value="${escapeHtml(r.desc||"")}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows" data-idx="${idx}" data-field="label"
+                        value="${escapeHtml(r.label)}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows" data-idx="${idx}" data-field="desc"
+                        placeholder="Deskripsi (opsional)" value="${escapeHtml(r.desc||"")}">
                       <div style="display:flex; gap:8px; align-items:center;">
                         <input class="editNum" data-edit style="max-width:170px" type="number" min="0" step="50"
                           data-skey="${section.key}" data-type="rows" data-idx="${idx}" data-field="price"
@@ -769,21 +805,23 @@
           return html;
         };
 
-        const renderTextRows = (section, rows, showThumbRows) => {
+        const renderTextRows = (section, rows) => {
           let html = `<div class="itemList">`;
           rows.forEach((r, idx)=>{
             html += `
-              <div class="itemCard${showThumbRows ? "" : " noThumb"}">
-                ${showThumbRows ? rowThumbHtml(r) : ""}
+              <div class="itemCard">
                 <div class="itemMain">
                   <div class="itemName">${escapeHtml(r.label)}</div>
                   <div class="itemMeta">${escapeHtml(r.desc || r.text || "")}</div>
 
                   ${isAdmin ? `
                     <div class="editGrid">
-                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="label" value="${escapeHtml(r.label)}">
-                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="text" value="${escapeHtml(r.text||"")}">
-                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="desc" placeholder="Deskripsi (opsional)" value="${escapeHtml(r.desc||"")}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="label"
+                        value="${escapeHtml(r.label)}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="text"
+                        value="${escapeHtml(r.text||"")}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="textRows" data-idx="${idx}" data-field="desc"
+                        placeholder="Deskripsi (opsional)" value="${escapeHtml(r.desc||"")}">
                     </div>
                   `:``}
                 </div>
@@ -795,8 +833,7 @@
           return html;
         };
 
-        // FIX: jika group rowThumb=false, jangan dipaksa jadi true oleh policy "warna: row"
-        const renderGrouped = (section, groups, policy) => {
+        const renderGrouped = (section, groups) => {
           state.ui.accOpen = state.ui.accOpen || {};
           let html = "";
           groups.forEach((g, gidx)=>{
@@ -804,10 +841,7 @@
             if(state.ui.accOpen[k] === undefined) state.ui.accOpen[k] = !isMobile();
             const collapsed = !state.ui.accOpen[k];
 
-            const showHeaderThumb = !!g.headerThumb || (policy === "groupOnly");
-            const showRowThumb =
-              (g.rowThumb === true) || (policy === "row" && g.rowThumb !== false);
-
+            const showHeaderThumb = !!g.headerThumb;
             const rowsFiltered = (g.rows||[]).filter(match);
             if(q && !rowsFiltered.length) return;
 
@@ -821,16 +855,33 @@
                   <div class="accArrow">▾</div>
                 </div>
                 <div class="accBody">
+                  ${adminGroupThumbEditor(section.key, g, gidx)}
                   <div class="itemList">
             `;
 
-            (q ? rowsFiltered : (g.rows||[])).forEach((r)=>{
+            (q ? rowsFiltered : (g.rows||[])).forEach((r, ridx)=>{
               html += `
-                <div class="itemCard${showRowThumb ? "" : " noThumb"}">
-                  ${showRowThumb ? rowThumbHtml(r) : ""}
+                <div class="itemCard">
                   <div class="itemMain">
                     <div class="itemName">${escapeHtml(r.label)}</div>
                     <div class="itemMeta">${escapeHtml(r.desc || g.title)}</div>
+
+                    ${isAdmin ? `
+                      <div class="editGrid">
+                        <input class="editText" data-edit data-skey="${section.key}" data-type="groupedRows" data-gidx="${gidx}" data-ridx="${ridx}" data-field="label"
+                          value="${escapeHtml(r.label)}">
+                        <input class="editText" data-edit data-skey="${section.key}" data-type="groupedRows" data-gidx="${gidx}" data-ridx="${ridx}" data-field="desc"
+                          placeholder="Deskripsi (opsional)" value="${escapeHtml(r.desc||"")}">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <input class="editNum" data-edit style="max-width:170px" type="number" min="0" step="50"
+                            data-skey="${section.key}" data-type="groupedRows" data-gidx="${gidx}" data-ridx="${ridx}" data-field="price"
+                            value="${Number(r.price)||0}">
+                          <span class="tiny">/ <input class="editText" data-edit style="max-width:120px"
+                            data-skey="${section.key}" data-type="groupedRows" data-gidx="${gidx}" data-ridx="${ridx}" data-field="unit"
+                            value="${escapeHtml(r.unit||"")}"></span>
+                        </div>
+                      </div>
+                    `:``}
                   </div>
                   <div class="itemPrice">
                     ${rupiah(r.price)}
@@ -848,13 +899,24 @@
 
         const renderRows2price = (section) => {
           let html = `<div class="itemList">`;
-          (section.rows||[]).forEach((r)=>{
+          (section.rows||[]).forEach((r, idx)=>{
             if(q && !match(r)) return;
             html += `
-              <div class="itemCard noThumb">
+              <div class="itemCard">
                 <div class="itemMain">
                   <div class="itemName">${escapeHtml(r.label)}</div>
                   <div class="itemMeta">${escapeHtml(r.desc||"")}</div>
+
+                  ${isAdmin ? `
+                    <div class="editGrid">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows2price" data-idx="${idx}" data-field="label" value="${escapeHtml(r.label)}">
+                      <input class="editText" data-edit data-skey="${section.key}" data-type="rows2price" data-idx="${idx}" data-field="desc" placeholder="Deskripsi" value="${escapeHtml(r.desc||"")}">
+                      <div style="display:flex; gap:8px;">
+                        <input class="editNum" data-edit data-skey="${section.key}" data-type="rows2price" data-idx="${idx}" data-field="p1" type="number" min="0" step="500" value="${Number(r.p1)||0}">
+                        <input class="editNum" data-edit data-skey="${section.key}" data-type="rows2price" data-idx="${idx}" data-field="p2" type="number" min="0" step="500" value="${Number(r.p2)||0}">
+                      </div>
+                    </div>
+                  `:``}
                 </div>
                 <div class="itemPrice">
                   ${rupiah(r.p1)} • ${rupiah(r.p2)}
@@ -868,16 +930,28 @@
           if(section.extras?.length){
             html += `<div class="tiny" style="margin:10px 0 6px 0;"><b>Tambahan</b></div>`;
             html += `<div class="itemList">`;
-            section.extras.forEach((ex)=>{
+            section.extras.forEach((ex, exi)=>{
               if(q && !match(ex)) return;
-              const isKotak = normalize(ex.label).includes("kotak");
-              const showThumb = isKotak;
               html += `
-                <div class="itemCard${showThumb ? "" : " noThumb"}">
-                  ${showThumb ? rowThumbHtml({label:ex.label, img:ex.img}) : ""}
+                <div class="itemCard">
                   <div class="itemMain">
                     <div class="itemName">${escapeHtml(ex.label)}</div>
                     <div class="itemMeta">${escapeHtml(ex.desc||"")}</div>
+
+                    ${isAdmin ? `
+                      <div class="editGrid">
+                        <input class="editText" data-edit data-skey="${section.key}" data-type="extras" data-idx="${exi}" data-field="label" value="${escapeHtml(ex.label)}">
+                        <input class="editText" data-edit data-skey="${section.key}" data-type="extras" data-idx="${exi}" data-field="desc" placeholder="Deskripsi" value="${escapeHtml(ex.desc||"")}">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                          <input class="editNum" data-edit style="max-width:170px" type="number" min="0" step="500"
+                            data-skey="${section.key}" data-type="extras" data-idx="${exi}" data-field="price"
+                            value="${Number(ex.price)||0}">
+                          <span class="tiny">/ <input class="editText" data-edit style="max-width:120px"
+                            data-skey="${section.key}" data-type="extras" data-idx="${exi}" data-field="unit"
+                            value="${escapeHtml(ex.unit||"")}"></span>
+                        </div>
+                      </div>
+                    `:``}
                   </div>
                   <div class="itemPrice">
                     ${rupiah(ex.price)}
@@ -892,7 +966,7 @@
           return html;
         };
 
-        // GLOBAL SEARCH
+        // ===== GLOBAL SEARCH =====
         if(q){
           const card = document.createElement("div");
           card.className = "card";
@@ -911,19 +985,17 @@
           let found = false;
 
           state.sections.forEach(section=>{
-            const policy = policyForSectionKey(section.key);
-
             if(section.type === "rows"){
               const rows = (section.rows||[]).filter(match);
               if(!rows.length) return;
               found = true;
               html += sectionHeaderHtml(section);
-              html += renderRows(section, rows, policy==="row");
+              html += renderRows(section, rows);
               html += `<div style="height:10px"></div>`;
             }
 
             if(section.type === "groupedRows"){
-              const tmp = renderGrouped(section, section.groups||[], policy);
+              const tmp = renderGrouped(section, section.groups||[]);
               if(tmp.includes("Tidak ada data")) return;
               found = true;
               html += sectionHeaderHtml(section);
@@ -945,7 +1017,7 @@
               if(!rows.length) return;
               found = true;
               html += sectionHeaderHtml(section);
-              html += renderTextRows(section, rows, policy==="row");
+              html += renderTextRows(section, rows);
               html += `<div style="height:10px"></div>`;
             }
           });
@@ -954,32 +1026,35 @@
           html += `</div>`;
           card.innerHTML = html;
           main.appendChild(card);
+
+          // editor thumbnail tetap bisa di tab normal, bukan di global search
           return;
         }
 
-        // NORMAL TAB MODE
+        // ===== NORMAL TAB MODE =====
         const section = state.sections.find(x=>x.key===state.ui.activeTab) || state.sections[0];
         if(!section) return;
-
-        const policy = policyForSectionKey(section.key);
 
         const card = document.createElement("div");
         card.className = "card";
 
         let body = sectionHeaderHtml(section);
+        body += adminSectionThumbEditor(section);
 
         if(section.type === "rows"){
-          body += renderRows(section, section.rows||[], policy==="row");
+          body += renderRows(section, section.rows||[]);
         } else if(section.type === "groupedRows"){
-          body += renderGrouped(section, section.groups||[], policy);
+          body += renderGrouped(section, section.groups||[]);
         } else if(section.type === "rows2price"){
           body += renderRows2price(section);
         } else if(section.type === "textRows"){
-          body += renderTextRows(section, section.rows||[], policy==="row");
+          body += renderTextRows(section, section.rows||[]);
         }
 
         card.innerHTML = `<div class="cardInner">${body}</div>`;
         main.appendChild(card);
+
+        bindAdminEditors();
       }
 
       function wireUI(){
@@ -1038,6 +1113,11 @@
         };
 
         $("q").oninput = render;
+
+        // handle accordion open/close default when screen changes
+        window.addEventListener("resize", ()=>{
+          // no auto reset, just rerender for layout
+        }, {passive:true});
       }
 
       // START
