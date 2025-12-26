@@ -16,7 +16,6 @@
       --ok:#42d39b;
       --danger:#ff5c7a;
       --shadow: 0 10px 25px rgba(0,0,0,.35);
-      --r2:22px;
       --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
@@ -290,6 +289,7 @@
         <button class="btn primary" id="btnPrint">🖨️ Print / Save PDF</button>
 
         <button class="btn" id="btnMode">👤 Mode: Customer</button>
+        <button class="btn" id="btnPass" title="Ganti password Admin">🔑 Admin Password</button>
 
         <button class="btn" id="btnExport" title="Backup ke JSON">⬇️ Export JSON</button>
         <label class="btn" for="importFile" id="btnImportLabel" title="Import dari JSON">⬆️ Import JSON</label>
@@ -319,7 +319,7 @@
 
   <script>
     (function(){
-      const STORAGE_KEY = "spectrum_catalog_tabs_compact_v10";
+      const STORAGE_KEY = "spectrum_catalog_tabs_compact_v11_adminlock";
       const deepClone = (x)=>JSON.parse(JSON.stringify(x));
 
       const nf = new Intl.NumberFormat("id-ID");
@@ -337,14 +337,6 @@
           .replaceAll("'","&#039;");
       }
 
-      function initialsFromLabel(label){
-        const s = (label||"").trim().toUpperCase();
-        if(!s) return "IMG";
-        const parts = s.split(/\s+/).filter(Boolean);
-        if(parts.length===1) return parts[0].slice(0,3);
-        return (parts[0][0]||"") + (parts[1][0]||"") + (parts[2]?.[0]||"");
-      }
-
       function thumbBoxHtml(title, img){
         if(img){
           return `<div class="thumb"><img src="${escapeHtml(img)}" alt=""></div>`;
@@ -359,6 +351,17 @@
 
       function accKey(sectionKey, groupTitle){ return `${sectionKey}::${groupTitle}`; }
       function isMobile(){ return window.matchMedia && window.matchMedia("(max-width: 720px)").matches; }
+
+      // ===== Admin lock helpers =====
+      function getAdminPass(){
+        return (state?.settings?.adminPassword || "1234").toString();
+      }
+      function isAdminUnlocked(){
+        return localStorage.getItem(STORAGE_KEY + "_admin_unlocked") === "1";
+      }
+      function setAdminUnlocked(v){
+        localStorage.setItem(STORAGE_KEY + "_admin_unlocked", v ? "1" : "0");
+      }
 
       const DESC = {
         HVS: "Kertas HVS (uncoated) matte/halus. Cocok dokumen & materi belajar. Warna natural (tidak se-glossy art paper).",
@@ -389,7 +392,10 @@
           wa: "0895382392099",
           waE164: "62895382392099"
         },
-        settings: { mode: "customer" },
+        settings: {
+          mode: "customer",
+          adminPassword: "1234"   // ✅ ganti password default di sini
+        },
         ui: { activeTab: "fotocopy", accOpen: {} },
         sections: [
           { key:"fotocopy", title:"Fotocopy", headerThumb:true, thumbTitle:"Fotocopy", thumbImg:"",
@@ -576,7 +582,8 @@
           if(!obj?.sections) return deepClone(DEFAULT_STATE);
           if(!obj.ui) obj.ui = {activeTab:"fotocopy", accOpen:{}};
           if(!obj.ui.accOpen) obj.ui.accOpen = {};
-          if(!obj.settings) obj.settings = {mode:"customer"};
+          if(!obj.settings) obj.settings = deepClone(DEFAULT_STATE.settings);
+          if(!obj.settings.adminPassword) obj.settings.adminPassword = DEFAULT_STATE.settings.adminPassword;
           return obj;
         }catch(e){
           return deepClone(DEFAULT_STATE);
@@ -585,15 +592,22 @@
       function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
       let state = loadState();
-      let isAdmin = (state.settings.mode === "admin");
+      let isAdmin = false;
 
       function applyMode(mode){
+        // Jika admin belum unlock, paksa customer
+        if(mode === "admin" && !isAdminUnlocked()){
+          mode = "customer";
+        }
         state.settings.mode = mode;
         isAdmin = (mode === "admin");
+
         $("btnMode").textContent = isAdmin ? "🛠️ Mode: Admin" : "👤 Mode: Customer";
         $("btnExport").style.display = isAdmin ? "" : "none";
         $("btnImportLabel").style.display = isAdmin ? "" : "none";
         $("btnReset").style.display = isAdmin ? "" : "none";
+        $("btnPass").style.display = isAdmin ? "" : "none";
+
         saveState();
       }
 
@@ -619,7 +633,12 @@
           const el = document.createElement("div");
           el.className = "tab" + (t.key===state.ui.activeTab ? " active" : "");
           el.textContent = t.title;
-          el.onclick = ()=>{ state.ui.activeTab = t.key; saveState(); renderTabs(); render(); };
+          el.onclick = ()=>{
+            state.ui.activeTab = t.key;
+            saveState();
+            renderTabs();
+            render();
+          };
           tabs.appendChild(el);
         });
       }
@@ -707,7 +726,6 @@
 
             const t = inp.dataset.type;
             const field = inp.dataset.field;
-
             const value = (inp.type === "checkbox") ? inp.checked : inp.value;
 
             if(t === "sectionHeader"){
@@ -1026,8 +1044,6 @@
           html += `</div>`;
           card.innerHTML = html;
           main.appendChild(card);
-
-          // editor thumbnail tetap bisa di tab normal, bukan di global search
           return;
         }
 
@@ -1058,10 +1074,43 @@
       }
 
       function wireUI(){
+        // ✅ Mode + password lock
         $("btnMode").onclick = ()=>{
-          applyMode(isAdmin ? "customer" : "admin");
-          render();
+          if(isAdmin){
+            // keluar admin -> kunci lagi
+            setAdminUnlocked(false);
+            applyMode("customer");
+            render();
+            return;
+          }
+
+          // mau masuk admin: minta password
+          const pass = prompt("Masukkan password Admin:");
+          if(pass === null) return;
+
+          if(pass.toString() === getAdminPass()){
+            setAdminUnlocked(true);
+            applyMode("admin");
+            render();
+          }else{
+            alert("Password salah.");
+          }
         };
+
+        // ✅ ganti password (hanya muncul saat admin)
+        $("btnPass").onclick = ()=>{
+          const np = prompt("Password Admin baru (min 4 karakter):");
+          if(np === null) return;
+          const val = (np||"").toString();
+          if(val.length < 4){
+            alert("Minimal 4 karakter.");
+            return;
+          }
+          state.settings.adminPassword = val;
+          saveState();
+          alert("Password berhasil diganti ✅");
+        };
+
         $("btnPrint").onclick = ()=>window.print();
 
         $("btnExport").onclick = ()=>{
@@ -1086,13 +1135,18 @@
               state = obj;
               if(!state.ui) state.ui = {activeTab:"fotocopy", accOpen:{}};
               if(!state.ui.accOpen) state.ui.accOpen = {};
-              if(!state.settings) state.settings = {mode:"admin"};
-              applyMode(state.settings.mode || "admin");
+              if(!state.settings) state.settings = deepClone(DEFAULT_STATE.settings);
+              if(!state.settings.adminPassword) state.settings.adminPassword = DEFAULT_STATE.settings.adminPassword;
+
+              // demi keamanan: setelah import, admin tetap terkunci sampai unlock lagi
+              setAdminUnlocked(false);
+              applyMode("customer");
+
               saveState();
               initBrand();
               renderTabs();
               render();
-              alert("Import berhasil ✅");
+              alert("Import berhasil ✅ (Admin terkunci, unlock lagi kalau mau edit)");
             }catch(e){
               alert("Gagal import JSON. Pastikan file benar.");
             }
@@ -1104,6 +1158,7 @@
         $("btnReset").onclick = ()=>{
           if(confirm("Reset ke default? (data edit akan hilang)")){
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(STORAGE_KEY + "_admin_unlocked");
             state = deepClone(DEFAULT_STATE);
             applyMode("customer");
             initBrand();
@@ -1113,16 +1168,14 @@
         };
 
         $("q").oninput = render;
-
-        // handle accordion open/close default when screen changes
-        window.addEventListener("resize", ()=>{
-          // no auto reset, just rerender for layout
-        }, {passive:true});
       }
 
       // START
       try{
-        applyMode(state.settings?.mode || "customer");
+        // selalu mulai customer, admin wajib unlock via password
+        setAdminUnlocked(false);
+        applyMode("customer");
+
         initBrand();
         renderTabs();
         wireUI();
