@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spectrum Catalog - Solusi Cetak</title>
+    <style>
+        /* === VARIABEL WARNA & TEMA === */
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --card-bg: #252525;
+            --primary: #FFC300;
+            --primary-hover: #e0ab00;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --radius-lg: 12px;
+            --radius-md: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; scroll-behavior: smooth; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+        /* === HEADER & PENCARIAN === */
+        header { background-color: var(--surface-color); padding: 15px 20px; position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--border); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; gap: 20px; }
+        .logo { font-size: 22px; font-weight: 900; color: var(--primary); font-style: italic; letter-spacing: 1px; flex-shrink: 0; }
+        .search-bar { flex-grow: 1; max-width: 600px; position: relative; }
+        .search-bar input { width: 100%; padding: 12px 20px; background-color: var(--bg-color); border: 1px solid var(--border); color: white; border-radius: 50px; outline: none; font-size: 14px; transition: border-color 0.3s; }
+        .search-bar input:focus { border-color: var(--primary); }
+
+        /* === NAVIGASI KATEGORI (SWIPEABLE DI HP) === */
+        .category-nav { background-color: var(--surface-color); border-bottom: 1px solid var(--border); position: sticky; top: 65px; z-index: 999; }
+        .nav-list { display: flex; overflow-x: auto; max-width: 1200px; margin: 0 auto; padding: 12px 20px; gap: 15px; scrollbar-width: none; }
+        .nav-list::-webkit-scrollbar { display: none; }
+        .nav-item { white-space: nowrap; font-size: 13px; font-weight: 600; color: var(--text-muted); text-decoration: none; padding: 6px 12px; border-radius: 20px; background: var(--bg-color); transition: all 0.2s; border: 1px solid transparent; }
+        .nav-item:hover, .nav-item:active { color: var(--primary); border-color: var(--primary); background: rgba(255, 195, 0, 0.1); }
+
+        /* === KONTEN UTAMA === */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .category-section { margin-top: 40px; margin-bottom: 20px; scroll-margin-top: 130px; }
+        .category-title { color: var(--primary); font-size: 20px; margin-bottom: 15px; display: inline-block; position: relative; padding-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .category-title::after { content: ''; position: absolute; left: 0; bottom: 0; width: 50px; height: 3px; background-color: var(--primary); border-radius: 2px; }
+        
+        .note-box { background: rgba(255, 195, 0, 0.05); padding: 12px 15px; border-left: 4px solid var(--primary); border-radius: 0 var(--radius-md) var(--radius-md) 0; margin-bottom: 20px; font-size: 13px; line-height: 1.5; color: #ddd; }
+
+        /* === GRID & KARTU PRODUK === */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background-color: var(--card-bg); border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border); display: flex; flex-direction: column; transition: transform 0.3s, box-shadow 0.3s; }
+        .card:hover { transform: translateY(-4px); border-color: rgba(255, 195, 0, 0.5); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        
+        .card-image { background: linear-gradient(145deg, #ffffff, #e6e6e6); height: 160px; display: flex; justify-content: center; align-items: center; color: #444; font-weight: bold; font-size: 13px; text-align: center; padding: 10px; border-bottom: 3px solid var(--primary); }
+        
+        .card-info { padding: 16px; flex-grow: 1; display: flex; flex-direction: column; }
+        .product-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+        .product-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 15px; flex-grow: 1; line-height: 1.5; }
+        
+        .price-list { background-color: rgba(0,0,0,0.2); border-radius: var(--radius-md); padding: 10px; font-size: 13px; border: 1px solid var(--border); margin-top: auto; }
+        .price-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #444; }
+        .price-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .price-val { font-weight: 700; color: #fff; }
+
+        /* === SECTION CABANG === */
+        .branch-section { background-color: var(--surface-color); padding: 60px 20px; border-top: 1px solid var(--border); margin-top: 40px; }
+        .branch-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .branch-card { background-color: var(--card-bg); padding: 20px; border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; }
+        .branch-card h3 { color: var(--primary); font-size: 18px; margin-bottom: 8px; }
+        .branch-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
+        
+        .wa-btn { display: flex; align-items: center; justify-content: center; background-color: #25D366; color: white; text-decoration: none; padding: 12px; border-radius: var(--radius-md); font-weight: 700; font-size: 14px; transition: background-color 0.2s; gap: 8px; }
+        .wa-btn:hover { background-color: #128C7E; }
+
+        footer { text-align: center; padding: 20px; font-size: 13px; color: var(--text-muted); background: #000; }
+
+        @media (max-width: 768px) {
+            header { padding: 12px 15px; }
+            .header-top { flex-direction: column; align-items: stretch; gap: 12px; }
+            .logo { text-align: center; font-size: 24px; }
+            .category-nav { top: 95px; }
+            .product-grid { grid-template-columns: 1fr; gap: 15px; }
+            .branch-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <div class="logo">SPECTRUM</div>
+            <div class="search-bar">
+                <input type="text" placeholder="Cari produk cetak...">
+            </div>
+        </div>
+    </header>
+
+    <nav class="category-nav">
+        <div class="nav-list">
+            <a href="#kertas" class="nav-item">Kertas A3+</a>
+            <a href="#stiker" class="nav-item">Stiker A3+</a>
+            <a href="#finishing" class="nav-item">Finishing</a>
+            <a href="#cutting" class="nav-item">Jasa Cutting</a>
+            <a href="#kartunama" class="nav-item">Kartu Nama</a>
+            <a href="#brosur" class="nav-item">Paket Brosur</a>
+            <a href="#jilid" class="nav-item">Macam-Macam Jilid</a>
+            <a href="#cabang" class="nav-item">Cabang Spectrum</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="category-section" id="kertas">
+            <h2 class="category-title">Kertas A3+ (31 x 47 cm)</h2>
+            <div class="note-box">
+                <strong>Info:</strong> Harga per lembar A3+ (31x47cm). Harga bolak-balik (2 sisi) dikalikan dua dari harga 1 sisi.
+            </div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 400g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 400g</div>
+                        <div class="product-desc">Sangat tebal, kaku, dan licin glossy. Ideal untuk kemasan premium, hang tag baju, atau kartu nama eksklusif.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 8.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 17.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 310g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 310g</div>
+                        <div class="product-desc">Tebal dan licin. Cocok digunakan untuk cover majalah, poster tebal, kartu nama, atau kemasan box kecil.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 5.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 11.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 260g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 260g</div>
+                        <div class="product-desc">Cukup tebal dan licin. Pilihan standar untuk cetak poster, cover buku/majalah, kartu nama, atau sertifikat.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 4.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 9.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 210g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 210g</div>
+                        <div class="product-desc">Ketebalan sedang dan licin. Cocok untuk poster dinding, kalender meja, brosur tebal, atau cover buku tipis.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 4.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 9.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 150g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 150g</div>
+                        <div class="product-desc">Lebih tipis dan licin glossy. Ideal untuk brosur/flyer premium, isi majalah, profil perusahaan, atau katalog.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 4.000</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 8.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar AP 120g ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Art Paper 120g</div>
+                        <div class="product-desc">Paling tipis di kelas AP, licin. Cocok untuk brosur sebar massal, flyer standar, dan halaman isi majalah.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 4.000</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 8.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar HVS ]</div>
+                    <div class="card-info">
+                        <div class="product-title">HVS 70/80/100 gsm</div>
+                        <div class="product-desc">Permukaan matte/kasar, mudah menyerap tinta & bisa ditulis pulpen. Ideal untuk dokumen, kop surat, atau isi buku.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 4.000</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 8.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Blushwhite ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Blushwhite</div>
+                        <div class="product-desc">Tebal dengan tekstur matte menyerupai buku gambar (tidak licin). Cocok untuk sertifikat, kartu iuran, atau undangan.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 5.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 11.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Fancy ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Jasmine / Copenhagen</div>
+                        <div class="product-desc">Kertas fancy premium. Jasmine berefek glitter, Copenhagen agak bergaris halus. Ideal untuk undangan.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 5.500</span></div>
+                            <div class="price-row"><span>2 Sisi:</span><span class="price-val">Rp 11.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="stiker">
+            <h2 class="category-title">Stiker A3+ (31 x 47 cm)</h2>
+            <div class="note-box"><strong>Info:</strong> Harga per lembar A3+ (31x47cm).</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Stiker Bontak ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Stiker Bontak</div>
+                        <div class="product-desc">Bahan kertas stiker standar, tidak tahan air. Cocok untuk label kemasan makanan/minuman kering.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Harga per lembar:</span><span class="price-val">Rp 6.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Stiker Vinyl ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Stiker Vinyl</div>
+                        <div class="product-desc">Berbahan plastik tebal (Tersedia Putih & Transparan). Anti sobek dan tahan air. Cocok untuk frozen food/minuman basah.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Harga per lembar:</span><span class="price-val">Rp 10.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Vinyl Metalik ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Stiker Vinyl Metalik</div>
+                        <div class="product-desc">Stiker plastik tahan air dengan efek dasar metalik/mengkilap. Memberikan kesan sangat mewah pada produk.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Harga per lembar:</span><span class="price-val">Rp 14.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="finishing">
+            <h2 class="category-title">Tambahan Finishing</h2>
+            <div class="note-box"><strong>Note Laminasi:</strong> Hanya bisa untuk bahan Artpaper dan Stiker.</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Tinta Putih ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Tambahan Tinta Putih</div>
+                        <div class="product-desc">Khusus digunakan untuk Stiker Transparan agar warna desain tidak tembus pandang saat ditempel.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Mulai dari:</span><span class="price-val">Rp 10.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Laminasi ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Laminasi Doff/Glossy</div>
+                        <div class="product-desc">Melapisi cetakan agar lebih awet & elegan. Doff (redup/matte), Glossy (mengkilap).</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Harga per lembar:</span><span class="price-val">Rp 4.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="cutting">
+            <h2 class="category-title">Jasa Cutting Stiker</h2>
+            <div class="note-box"><strong>Aturan File:</strong> CUTTING 1 LEMBAR MAKSIMAL 3 DESAIN ATAU GAMBAR. Harga di bawah adalah harga pemotongan dalam 1 lembar A3.</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Kiss Cut ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Kiss Cut (Setengah Putus)</div>
+                        <div class="product-desc">Stiker dipotong sesuai pola namun lembar belakangnya (backing paper) tetap utuh. Tinggal kletek.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>S (1 s.d 45 pcs)</span><span class="price-val">Rp 4.500</span></div>
+                            <div class="price-row"><span>M (46 s.d 90 pcs)</span><span class="price-val">Rp 7.500</span></div>
+                            <div class="price-row"><span>L (91 s.d 135 pcs)</span><span class="price-val">Rp 12.000</span></div>
+                            <div class="price-row"><span>XL (136 s.d 200 pcs)</span><span class="price-val">Rp 20.000</span></div>
+                            <div class="price-row"><span>XXL (201 - 300 pcs)</span><span class="price-val">Rp 35.000</span></div>
+                            <div class="price-row"><span>3XL (301 - 500 pcs)</span><span class="price-val">Rp 50.000</span></div>
+                            <div class="price-row"><span>4XL (501 - 1000 pcs)</span><span class="price-val">Rp 100.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Die Cut ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Die Cut (Cutting Putus)</div>
+                        <div class="product-desc">Stiker dipotong putus sesuai bentuk desain hingga ke kertas pelindung belakangnya (berbentuk satuan/ecer).</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>S (1 s.d 45 pcs)</span><span class="price-val">Rp 5.000</span></div>
+                            <div class="price-row"><span>M (46 s.d 90 pcs)</span><span class="price-val">Rp 10.000</span></div>
+                            <div class="price-row"><span>L (91 s.d 135 pcs)</span><span class="price-val">Rp 15.000</span></div>
+                            <div class="price-row"><span>XL (136 s.d 200 pcs)</span><span class="price-val">Rp 25.000</span></div>
+                            <div class="price-row"><span>XXL (201 - 300 pcs)</span><span class="price-val">Rp 35.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="kartunama">
+            <h2 class="category-title">Kartu Nama</h2>
+            <div class="note-box"><strong>Info:</strong> 1 Box = 100pcs, Ukuran 9 x 5,5 cm.</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Kartu AP 260 ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Bahan AP 260</div>
+                        <div class="product-desc">Bahan Art Paper 260g. Pilihan standar untuk kartu nama bisnis cetak digital.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 22.000</span></div>
+                            <div class="price-row"><span>2 Sisi (Bolak-balik):</span><span class="price-val">Rp 44.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Kartu AP 310 ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Bahan AP 310</div>
+                        <div class="product-desc">Bahan Art Paper 310g. Lebih tebal dan kokoh dibandingkan AP 260.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 27.000</span></div>
+                            <div class="price-row"><span>2 Sisi (Bolak-balik):</span><span class="price-val">Rp 54.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Kartu Fancy ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Blueswhite / Copenhagen / Jasmine</div>
+                        <div class="product-desc">Kertas fancy dengan tekstur khas (matte, bergaris, atau efek glitter mutiara). Terlihat sangat eksklusif.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>1 Sisi:</span><span class="price-val">Rp 27.000</span></div>
+                            <div class="price-row"><span>2 Sisi (Bolak-balik):</span><span class="price-val">Rp 54.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Tambahan Box ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Tambahan Kelengkapan</div>
+                        <div class="product-desc">Opsi untuk menambah kotak mika atau melapisi kartu dengan laminasi Doff/Glossy agar lebih awet.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Tambah Kotak:</span><span class="price-val">Rp 3.000 / pcs</span></div>
+                            <div class="price-row"><span>Laminasi Doff/Glossy (1 Sisi):</span><span class="price-val">Rp 16.000 / box</span></div>
+                            <div class="price-row"><span>Laminasi Doff/Glossy (2 Sisi):</span><span class="price-val">Rp 32.000 / box</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="brosur">
+            <h2 class="category-title">Paket Brosur (1 Rim)</h2>
+            <div class="note-box"><strong>Info:</strong> Harga tertera adalah per paket 1 rim (500 lembar).</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A4 ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A4 (1 Sisi)</div>
+                        <div class="product-desc">Ukuran kertas standar 21x29.7cm. Sangat cocok untuk menyajikan informasi detail perusahaan/produk (satu muka).</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 570.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 585.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 570.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A4 - 2 Sisi ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A4 (2 Sisi)</div>
+                        <div class="product-desc">Brosur ukuran A4 yang dicetak penuh depan-belakang. Biasanya digunakan untuk brosur lipat 2 atau lipat 3.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 1.050.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 1.100.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 1.050.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A5 ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A5 (1 Sisi)</div>
+                        <div class="product-desc">Setengah dari ukuran A4. Ukuran ini paling populer digunakan sebagai selebaran promosi pameran (satu muka).</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 290.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 305.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 290.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A5 - 2 Sisi ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A5 (2 Sisi)</div>
+                        <div class="product-desc">Cetak bolak-balik ukuran A5. Memberikan ruang lebih untuk informasi detail promosi atau gambar produk tambahan.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 585.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 600.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 585.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A6 ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A6 (1 Sisi)</div>
+                        <div class="product-desc">Setengah ukuran A5. Sangat ekonomis, cocok untuk brosur sebar massal, kupon, atau disisipkan di dalam paket pesanan.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 165.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 180.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 165.000</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Brosur A6 - 2 Sisi ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Brosur A6 (2 Sisi)</div>
+                        <div class="product-desc">Brosur mini A6 yang dicetak dua sisi. Bisa difungsikan sebagai kartu garansi, manual singkat, atau ucapan terima kasih.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Artpaper 120:</span><span class="price-val">Rp 290.000</span></div>
+                            <div class="price-row"><span>Artpaper 150:</span><span class="price-val">Rp 305.000</span></div>
+                            <div class="price-row"><span>HVS 100:</span><span class="price-val">Rp 290.000</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="category-section" id="jilid">
+            <h2 class="category-title">Macam-Macam Jilid</h2>
+            <div class="note-box"><strong>Info:</strong> Harga jilid (lakban, spiral, softcover, hardcover) bervariasi menyesuaikan dengan ketebalan atau jumlah halaman buku.</div>
+            <div class="product-grid">
+                <div class="card">
+                    <div class="card-image">[ Gambar Jilid Spiral ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Jilid Spiral</div>
+                        <div class="product-desc">Menggunakan kawat spiral. Buku dapat dibuka rata 360 derajat tanpa merusak jilidan. Cocok untuk kalender, katalog, modul.</div>
+                        <div class="price-list"><div class="price-row"><span>Harga:</span><span class="price-val">Rp 6.000 - Rp 28.000</span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Jilid Lakban ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Jilid Lakban</div>
+                        <div class="product-desc">Jilid standar di bagian punggung menggunakan lakban hitam. Paling murah dan cepat untuk laporan atau dokumen biasa.</div>
+                        <div class="price-list"><div class="price-row"><span>Harga:</span><span class="price-val">Rp 4.000 - Rp 15.000</span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Jepret ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Jepret Tengah</div>
+                        <div class="product-desc">Jilid menggunakan steples di bagian tengah lipatan buku. Sangat cocok untuk buku tipis seperti majalah atau booklet.</div>
+                        <div class="price-list"><div class="price-row"><span>Harga:</span><span class="price-val">Rp 1.500</span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Softcover ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Softcover (Lem Panas)</div>
+                        <div class="product-desc">Jilid bagian punggung menggunakan lem panas (binding). Terlihat sangat rapi layaknya buku novel cetak standar toko.</div>
+                        <div class="price-list"><div class="price-row"><span>Harga:</span><span class="price-val">Rp 20.500 - Rp 50.000+</span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Hardcover ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Hardcover</div>
+                        <div class="product-desc">Jilid buku premium menggunakan karton tebal/papan. Tahan lama dan kokoh, biasa digunakan untuk skripsi atau album.</div>
+                        <div class="price-list"><div class="price-row"><span>Harga:</span><span class="price-val">Rp 35.000</span></div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-image">[ Gambar Mika Bufalo ]</div>
+                    <div class="card-info">
+                        <div class="product-title">Tambahan Cover Jilid</div>
+                        <div class="product-desc">Tambahan bahan khusus untuk mempercantik jilid lakban atau spiral Anda.</div>
+                        <div class="price-list">
+                            <div class="price-row"><span>Plastik Mika (Bening):</span><span class="price-val">Rp 1.000 / lembar</span></div>
+                            <div class="price-row"><span>Kertas Bufalo (Warna):</span><span class="price-val">Rp 1.000 / lembar</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="branch-section" id="cabang">
+        <h2 style="color: var(--primary); margin-bottom: 30px; text-align: center;">HUBUNGI CABANG KAMI</h2>
+        <div class="branch-grid">
+            <div class="branch-card">
+                <h3>Spectrum Pakuwon City</h3>
+                <p>Kompleks Ruko San Diego MR 2-20 (103)</p>
+                <a href="https://wa.me/6281235566088" target="_blank" class="wa-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Pakuwon
+                </a>
+            </div>
+            <div class="branch-card">
+                <h3>Spectrum Nginden Semolo</h3>
+                <p>Jl. Nginden Semolo 101</p>
+                <a href="https://wa.me/62895382391799" target="_blank" class="wa-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Nginden
+                </a>
+            </div>
+            <div class="branch-card">
+                <h3>Spectrum Manyar</h3>
+                <p>Jl. Menur Pumpungan 167C</p>
+                <a href="https://wa.me/6281181234559" target="_blank" class="wa-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Manyar
+                </a>
+            </div>
+            <div class="branch-card">
+                <h3>Spectrum Darmo Permai</h3>
+                <p>Jl. Raya Darmo Permai II No.56</p>
+                <a href="https://wa.me/6285717286128" target="_blank" class="wa-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Darmo
+                </a>
+            </div>
+            <div class="branch-card">
+                <h3>Spectrum Prambanan</h3>
+                <p>Raya Prambanan Lidah Kulon RK-B22</p>
+                <a href="https://wa.me/62895397100922" target="_blank" class="wa-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Prambanan
+                </a>
+            </div>
+            <div class="branch-card" style="border: 2px solid var(--primary);">
+                <h3>Spectrum Wilis (Malang)</h3>
+                <p>Jl. Wilis No.37B, Gading Kasri, Klojen, Malang</p>
+                <a href="https://wa.me/6282142552259" target="_blank" class="wa-btn" style="background:#20ba5a;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Malang
+                </a>
+            </div>
+            <div class="branch-card" style="border: 2px solid var(--primary);">
+                <h3>Spectrum Aniva (Tangerang)</h3>
+                <p>Ruko Aniva Grande G2 No. 7, Medang, Pagedangan</p>
+                <a href="https://wa.me/6281231642299" target="_blank" class="wa-btn" style="background:#20ba5a;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg> Chat WA Tangerang
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer>&copy; 2026 Spectrum Printing. All Rights Reserved.</footer>
+
+</body>
+</html>
